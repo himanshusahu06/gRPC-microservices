@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"net"
+	"time"
 
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
@@ -21,6 +22,28 @@ func (*server) Sum(ctx context.Context, req *calculatorpb.CalculatorRequest) (*c
 	return &calculatorpb.CalculatorResponse{
 		Result: result,
 	}, nil
+}
+
+func (*server) DecomposePrime(req *calculatorpb.PrimeNumberDecompositionRequest, stream calculatorpb.CalculatorService_DecomposePrimeServer) error {
+	glog.Infof("Decompose RPC was recieved: %v\n", req)
+	number := req.GetNumber()
+	var divisor int64 = 2
+	for {
+		if number <= 1 {
+			break
+		}
+		if number%divisor == int64(0) {
+			// prime number found, send it to client
+			stream.Send(&calculatorpb.PrimeNumberDecompositionResponse{
+				Result: divisor,
+			})
+			number = number / divisor
+			time.Sleep(1000 * time.Millisecond)
+		} else {
+			divisor = divisor + 1
+		}
+	}
+	return nil
 }
 
 func main() {
