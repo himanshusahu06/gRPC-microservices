@@ -3,16 +3,19 @@ package main
 import (
 	"calculator/calculatorpb"
 	"context"
-	"fmt"
-	"log"
+	"flag"
 
+	"github.com/golang/glog"
 	"google.golang.org/grpc"
 )
 
 func main() {
+	flag.Parse()
+	flag.Set("logtostderr", "true")
+
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("Failed to connect: %v\n", err)
+		glog.Fatalf("Failed to connect: %v\n", err)
 	}
 	defer conn.Close()
 
@@ -28,7 +31,7 @@ func doUnary(client calculatorpb.CalculatorServiceClient) {
 		Numbers: numbers,
 	})
 	if err != nil {
-		log.Fatalf("Failed to connect to server: %v", err)
+		glog.Fatalf("Failed to connect to server: %v", err)
 	}
-	fmt.Printf("response: %v\n", calculatorResponse)
+	glog.Infof("response: %v\n", calculatorResponse)
 }
