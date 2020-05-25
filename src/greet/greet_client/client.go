@@ -5,6 +5,7 @@ import (
 	"flag"
 	"greet/greetpb"
 	"io"
+	"time"
 
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
@@ -22,8 +23,9 @@ func main() {
 
 	c := greetpb.NewGreetServiceClient(conn)
 	//fmt.Printf("Created client: %f\n", c)
-	doUnary(c)
-	doServerStreaming(c)
+	//doUnary(c)
+	//doServerStreaming(c)
+	doClientStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -67,4 +69,37 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 		}
 		glog.Infoln(msg)
 	}
+}
+
+func doClientStreaming(c greetpb.GreetServiceClient) {
+	glog.Infof("Starting client stream RPC client..")
+	requests := []*greetpb.LongGreetRequest{
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Himanshu",
+			},
+		}, &greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Foo",
+			},
+		}, &greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Baz",
+			},
+		},
+	}
+	clientStream, err := c.LongGreet(context.Background())
+	if err != nil {
+		glog.Fatalln("Error connecting to server")
+	}
+	for _, request := range requests {
+		clientStream.Send(request)
+		glog.Infof("Sending message: %v\n", request)
+		time.Sleep(1000 * time.Millisecond)
+	}
+	res, err := clientStream.CloseAndRecv()
+	if err != nil {
+		glog.Fatalf("Error while receiveing response: %v", err)
+	}
+	glog.Infoln(res)
 }

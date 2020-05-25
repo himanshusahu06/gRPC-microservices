@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"greet/greetpb"
+	"io"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -41,6 +43,25 @@ func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb
 	}
 	glog.Infof("All data has been streamed successfully.")
 	return nil
+}
+
+func (*server) LongGreet(serverStream greetpb.GreetService_LongGreetServer) error {
+	glog.Info("Long greet RPC was invoked.")
+	var recipient []string
+	for {
+		msg, err := serverStream.Recv()
+		if err == io.EOF {
+			glog.Info("all data recieved.")
+			serverStream.SendAndClose(&greetpb.LongGreetResponse{
+				Result: "Hello " + strings.Join(recipient[:], ","),
+			})
+			return nil
+		}
+		recipient = append(recipient, msg.GetGreeting().GetFirstName())
+		if err != nil {
+			glog.Fatalf("Error connecting stream: %v", err)
+		}
+	}
 }
 
 func main() {
