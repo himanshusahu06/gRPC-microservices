@@ -67,3 +67,13 @@ service GreetService {
 ### gRPC vs REST
 
 ![gRPC vs REST](./images/grpc-rest.png)
+
+
+### gRPC Deadlines
+Deadaline allows gRPC clients to specify how long they are willing to wait for an RPC to complete before the RPC is terminated with the error `DEADLINE_EXCEEDED`.
+
+It is recommended to set deadline for all gRPC calls.
+
+1. server should check if deadline has exceeded and cancel the work it is doing.
+2. deadlines are propagated across if gRPC are calls are chained.
+    * A => B => C, deadline for A is passed to B and then passed to C

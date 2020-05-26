@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
 )
@@ -86,6 +89,24 @@ func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) er
 			return sendErr
 		}
 	}
+}
+
+// GreetWithDeadlines is unary API with deadlines
+func (*server) GreetWithDeadlines(ctx context.Context, req *greetpb.GreetWithDeadlineRequest) (*greetpb.GreetWithDeadlineResponse, error) {
+	glog.Infof("Greet with deadline RPC was invoked with %v\n", req)
+	// keep checking if client has canceled the request
+	for i := 0; i < 3; i++ {
+		if ctx.Err() == context.Canceled {
+			// client canceled the request
+			glog.Info("Client has canceled the request!")
+			return nil, status.Errorf(codes.Canceled, "Client has cancelled the request")
+		}
+		time.Sleep(time.Second)
+	}
+	firstName := req.GetGreeting().GetFirstName()
+	return &greetpb.GreetWithDeadlineResponse{
+		Result: "Hello " + firstName + "!",
+	}, nil
 }
 
 func main() {
