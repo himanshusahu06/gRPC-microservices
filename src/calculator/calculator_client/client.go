@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"io"
+	"time"
 
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
@@ -23,7 +24,8 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(conn)
 	//doUnary(c)
 	//doPrimeDecomposeStreaming(c)
-	doComputeAvarege(c)
+	//doComputeAvarege(c)
+	doFindAverage(c)
 }
 
 func doUnary(client calculatorpb.CalculatorServiceClient) {
@@ -89,4 +91,64 @@ func doComputeAvarege(client calculatorpb.CalculatorServiceClient) {
 		glog.Fatalf("Error receiveing response from server: %v\n", err)
 	}
 	glog.Infof("Average of %v is %v\n", numbers, res.GetResult())
+}
+
+func doFindAverage(client calculatorpb.CalculatorServiceClient) {
+	numbers := []*calculatorpb.FindMaximumRequest{
+		&calculatorpb.FindMaximumRequest{
+			Number: 1,
+		},
+		&calculatorpb.FindMaximumRequest{
+			Number: 5,
+		},
+		&calculatorpb.FindMaximumRequest{
+			Number: 3,
+		},
+		&calculatorpb.FindMaximumRequest{
+			Number: 6,
+		},
+		&calculatorpb.FindMaximumRequest{
+			Number: 2,
+		},
+		&calculatorpb.FindMaximumRequest{
+			Number: 20,
+		},
+	}
+
+	stream, connErr := client.FindMaximum(context.Background())
+	if connErr != nil {
+		glog.Fatalf("Error connecting server: %v", connErr)
+	}
+
+	waitg := make(chan struct{})
+	// create channel to block all go routines until all response is received
+
+	// send numbers in separate goroutine
+	go func() {
+		for _, number := range numbers {
+			glog.Infof("Sending: %v", number.GetNumber())
+			stream.Send(number)
+			time.Sleep(100 * time.Millisecond)
+		}
+		stream.CloseSend() // close send direction of stream
+	}()
+
+	// receive response from server
+	go func() {
+		for {
+			msg, recvErr := stream.Recv()
+			if recvErr == io.EOF {
+				break
+			}
+			if recvErr != nil {
+				glog.Fatalf("Error connecting server stream: %v", recvErr)
+				break
+			}
+			glog.Infof("Running avarage is: %v", msg.GetResult())
+		}
+		close(waitg)
+	}()
+
+	// wait for goroutines to exit
+	<-waitg
 }

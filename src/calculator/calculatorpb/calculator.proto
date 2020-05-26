@@ -27,6 +27,15 @@ message AverageNumberResponse {
     double result = 1;
 }
 
+
+message FindMaximumRequest {
+    int64 number = 1;
+}
+
+message FindMaximumResponse {
+    int64 result = 1;
+}
+
 service CalculatorService {
 
     rpc Sum(CalculatorRequest) returns (CalculatorResponse) {};
@@ -34,4 +43,6 @@ service CalculatorService {
     rpc DecomposePrime(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
 
     rpc ComputeAverage(stream AverageNumberRequest) returns (AverageNumberResponse) {};
+
+    rpc FindMaximum(stream FindMaximumRequest) returns (stream FindMaximumResponse) {};
 }

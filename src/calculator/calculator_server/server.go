@@ -5,6 +5,8 @@ import (
 	"context"
 	"flag"
 	"io"
+	"log"
+	"math"
 	"net"
 	"time"
 
@@ -65,6 +67,31 @@ func (*server) ComputeAverage(serverStream calculatorpb.CalculatorService_Comput
 		count++
 	}
 	return nil
+}
+
+func (*server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	glog.Infof("Find maxmimum RPC was recieved.")
+	var runningMax int64 = math.MinInt64
+	for {
+		msg, recvErr := stream.Recv()
+		if recvErr == io.EOF {
+			return nil
+		}
+		if recvErr != nil {
+			glog.Fatalf("Failed to receive messages from client: %v", recvErr)
+			return recvErr
+		}
+		if runningMax < msg.GetNumber() {
+			runningMax = msg.GetNumber()
+			sendErr := stream.Send(&calculatorpb.FindMaximumResponse{
+				Result: runningMax,
+			})
+			if sendErr != nil {
+				log.Fatalf("Error sending response: %v", sendErr)
+				return sendErr
+			}
+		}
+	}
 }
 
 func main() {
