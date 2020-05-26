@@ -4,6 +4,7 @@ import (
 	"calculator/calculatorpb"
 	"context"
 	"flag"
+	"io"
 	"net"
 	"time"
 
@@ -42,6 +43,26 @@ func (*server) DecomposePrime(req *calculatorpb.PrimeNumberDecompositionRequest,
 		} else {
 			divisor = divisor + 1
 		}
+	}
+	return nil
+}
+
+func (*server) ComputeAverage(serverStream calculatorpb.CalculatorService_ComputeAverageServer) error {
+	glog.Infof("Compute Average RPC was recieved.")
+	var sum int64 = 0
+	var count int64 = 0
+	for {
+		msg, err := serverStream.Recv()
+		if err == io.EOF {
+			serverStream.SendAndClose(&calculatorpb.AverageNumberResponse{
+				Result: float64(sum) / float64(count),
+			})
+			glog.Infoln("All request stream recieved.")
+			break
+		}
+		glog.Infof("Stream request recieved: %v\n", msg)
+		sum = sum + msg.GetNumber()
+		count++
 	}
 	return nil
 }

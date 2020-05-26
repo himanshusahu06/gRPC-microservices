@@ -21,8 +21,9 @@ func main() {
 	defer conn.Close()
 
 	c := calculatorpb.NewCalculatorServiceClient(conn)
-	doUnary(c)
-	doPrimeDecomposeStreaming(c)
+	//doUnary(c)
+	//doPrimeDecomposeStreaming(c)
+	doComputeAvarege(c)
 }
 
 func doUnary(client calculatorpb.CalculatorServiceClient) {
@@ -57,4 +58,35 @@ func doPrimeDecomposeStreaming(client calculatorpb.CalculatorServiceClient) {
 		}
 		glog.Infof("One of the prime decomposition of %d is %d\n", number, msg.Result)
 	}
+}
+
+func doComputeAvarege(client calculatorpb.CalculatorServiceClient) {
+	numbers := []*calculatorpb.AverageNumberRequest{
+		&calculatorpb.AverageNumberRequest{
+			Number: 1,
+		},
+		&calculatorpb.AverageNumberRequest{
+			Number: 2,
+		},
+		&calculatorpb.AverageNumberRequest{
+			Number: 3,
+		},
+		&calculatorpb.AverageNumberRequest{
+			Number: 4,
+		},
+	}
+
+	stream, err := client.ComputeAverage(context.Background())
+	if err != nil {
+		glog.Fatalf("Error connecting server: %v", err)
+	}
+	for _, number := range numbers {
+		glog.Infof("Sending number: %v\n", number)
+		stream.Send(number)
+	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		glog.Fatalf("Error receiveing response from server: %v\n", err)
+	}
+	glog.Infof("Average of %v is %v\n", numbers, res.GetResult())
 }
