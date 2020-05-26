@@ -64,6 +64,9 @@ service GreetService {
 1. By default, gRPC strongly recommends for you to use SSL (encryption over wire).
 2. Using interceptors, authentication can also be provided.
 
+![gRPC vs REST](./images/ssl.png)
+
+
 ### gRPC vs REST
 
 ![gRPC vs REST](./images/grpc-rest.png)
@@ -77,3 +80,8 @@ It is recommended to set deadline for all gRPC calls.
 1. server should check if deadline has exceeded and cancel the work it is doing.
 2. deadlines are propagated across if gRPC are calls are chained.
     * A => B => C, deadline for A is passed to B and then passed to C
+
+
+### References
+
+[pubsub.proto](https://github.com/googleapis/googleapis/blob/master/google/pubsub/v1/pubsub.proto)
