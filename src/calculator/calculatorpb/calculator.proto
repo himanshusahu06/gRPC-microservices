@@ -36,6 +36,14 @@ message FindMaximumResponse {
     int64 result = 1;
 }
 
+message SquareRootRequest {
+    int32 number = 1;
+}
+
+message SqaureRootResponse {
+    double result = 1;
+}
+
 service CalculatorService {
 
     rpc Sum(CalculatorRequest) returns (CalculatorResponse) {};
@@ -45,4 +53,7 @@ service CalculatorService {
     rpc ComputeAverage(stream AverageNumberRequest) returns (AverageNumberResponse) {};
 
     rpc FindMaximum(stream FindMaximumRequest) returns (stream FindMaximumResponse) {};
+
+    // this RPC will throw exception if number is negetive
+    rpc SquareRoot(SquareRootRequest) returns (SqaureRootResponse) {};
 }

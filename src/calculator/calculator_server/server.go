@@ -10,6 +10,9 @@ import (
 	"net"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
 )
@@ -92,6 +95,20 @@ func (*server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServ
 			}
 		}
 	}
+}
+
+// error handled square root
+func (*server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SqaureRootResponse, error) {
+	glog.Infof("Received square root request for number: %v", req.GetNumber())
+	if req.GetNumber() < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"Number can not be negetive.",
+		)
+	}
+	return &calculatorpb.SqaureRootResponse{
+		Result: math.Sqrt(float64(req.GetNumber())),
+	}, nil
 }
 
 func main() {

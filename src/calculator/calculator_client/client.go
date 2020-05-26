@@ -7,6 +7,8 @@ import (
 	"io"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
 )
@@ -25,7 +27,9 @@ func main() {
 	//doUnary(c)
 	//doPrimeDecomposeStreaming(c)
 	//doComputeAvarege(c)
-	doFindAverage(c)
+	//doFindAverage(c)
+	doErrorUnary(c, 10)
+	doErrorUnary(c, -10)
 }
 
 func doUnary(client calculatorpb.CalculatorServiceClient) {
@@ -151,4 +155,22 @@ func doFindAverage(client calculatorpb.CalculatorServiceClient) {
 
 	// wait for goroutines to exit
 	<-waitg
+}
+
+func doErrorUnary(client calculatorpb.CalculatorServiceClient, number int32) {
+	res, err := client.SquareRoot(context.Background(), &calculatorpb.SquareRootRequest{
+		Number: number,
+	})
+	if err != nil {
+		respnseError, ok := status.FromError(err)
+		if ok {
+			// actual gRPC error
+			glog.Error(respnseError.Code())
+			glog.Error(respnseError.Message())
+		} else {
+			glog.Fatalf("Unknow error calling square root: %v", err)
+		}
+	} else {
+		glog.Infof("square root is: %v", res.GetResult())
+	}
 }
