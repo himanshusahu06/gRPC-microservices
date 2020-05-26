@@ -25,7 +25,8 @@ func main() {
 	//fmt.Printf("Created client: %f\n", c)
 	//doUnary(c)
 	//doServerStreaming(c)
-	doClientStreaming(c)
+	// doClientStreaming(c)
+	doBiDirectionalStreaming(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -102,4 +103,62 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 		glog.Fatalf("Error while receiveing response: %v", err)
 	}
 	glog.Infoln(res)
+}
+
+func doBiDirectionalStreaming(c greetpb.GreetServiceClient) {
+	glog.Infof("Starting bidirectional stream RPC client..")
+
+	stream, connectErr := c.GreetEveryone(context.Background())
+	if connectErr != nil {
+		glog.Fatalln("Error connecting to server")
+	}
+
+	// create wait channel
+	waitc := make(chan struct{})
+
+	requests := []*greetpb.GreetEveryoneRequest{
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Himanshu",
+			},
+		}, &greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Foo",
+			},
+		}, &greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Baz",
+			},
+		},
+	}
+
+	// send message in separate go routine
+	go func() {
+		for _, req := range requests {
+			glog.Infof("Sending message: %v\n", req)
+			stream.Send(req)
+			time.Sleep(1000 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+
+	// receive message in separate go routine
+	go func() {
+		for {
+			res, recvErr := stream.Recv()
+			if recvErr == io.EOF {
+				// close wait channel after receiving all response
+				break
+			}
+			if recvErr != nil {
+				glog.Fatalf("Error while receiving: %v\n", recvErr)
+				break
+			}
+			glog.Infof("Received: %v\n", res)
+		}
+		close(waitc)
+	}()
+
+	// block all goroutine
+	<-waitc
 }

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"greet/greetpb"
 	"io"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -28,7 +29,7 @@ func (*server) Greet(ctx context.Context, req *greetpb.GreetingRequest) (*greetp
 	}, nil
 }
 
-// GreetManyTimes is streaming gRPC
+// GreetManyTimes is server streaming gRPC
 func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
 	glog.Infof("Greet many times RPC was invoked with %v\n", req)
 	firstName := req.GetGreeting().GetFirstName()
@@ -45,6 +46,7 @@ func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb
 	return nil
 }
 
+// LongGreet is client streaming gRPC
 func (*server) LongGreet(serverStream greetpb.GreetService_LongGreetServer) error {
 	glog.Info("Long greet RPC was invoked.")
 	var recipient []string
@@ -60,6 +62,28 @@ func (*server) LongGreet(serverStream greetpb.GreetService_LongGreetServer) erro
 		recipient = append(recipient, msg.GetGreeting().GetFirstName())
 		if err != nil {
 			glog.Fatalf("Error connecting stream: %v", err)
+		}
+	}
+}
+
+// GreetEveryone is bidirectional streaming gRPC
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	glog.Infoln("Greet everyone RPC was invoked.")
+	for {
+		req, recvErr := stream.Recv()
+		if recvErr == io.EOF {
+			return nil
+		}
+		if recvErr != nil {
+			glog.Fatalf("Error receiving client stream: %v", recvErr)
+			return recvErr
+		}
+		sendErr := stream.Send(&greetpb.GreetEveryoneResponse{
+			Result: "Hello " + req.GetGreeting().GetFirstName() + "!",
+		})
+		if sendErr != nil {
+			log.Fatalf("Error sending response: %v", sendErr)
+			return sendErr
 		}
 	}
 }
