@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
 	"github.com/golang/glog"
@@ -121,6 +122,8 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	greetpb.RegisterGreetServiceServer(grpcServer, &server{})
+	// Register reflection service on the given gRPC server.
+	reflection.Register(grpcServer)
 
 	if err := grpcServer.Serve(listener); err != nil {
 		glog.Fatalf("Failed to server: %v", err)

@@ -35,6 +35,8 @@ building API and Microservices using google gRPC and golang
 2. **Server streaming** - server pushes multiple response to clients over single TCP connection.
 3. **Client streaming** - client pushes multiple request to server over single TCP connection.
 4. **Bidirectional streaming** - both client and server exchange multiple request and responses over single TCP connection.
+    * The two streams operate independently, so clients and servers can read and write in whatever order they like.
+    * The order of messages in each stream is preserved.
 
 ![types of gRPC APIs](./images/gRPC-api-types.png)
 
@@ -85,3 +87,20 @@ It is recommended to set deadline for all gRPC calls.
 ### References
 
 [pubsub.proto](https://github.com/googleapis/googleapis/blob/master/google/pubsub/v1/pubsub.proto)
+
+### gRPC CLI
+
+https://github.com/ktr0731/evans#macos
+
+```bash
+evans -p 50051 -r
+```
+
+```bash
+greet.GreetService@127.0.0.1:50051> call Greet
+greeting::first_name (TYPE_STRING) => Himannshu
+greeting::last_name (TYPE_STRING) => Sahu
+{
+  "result": "Hello Himannshu Sahu"
+}
+```
